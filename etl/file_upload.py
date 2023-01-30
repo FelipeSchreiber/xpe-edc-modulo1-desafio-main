@@ -57,5 +57,4 @@ for i in range(len(urls)):
 # 	for root,dirs,files in os.walk(path):
 # 		for file in files:
 # 			s3_client.upload_file(os.path.join(root,file),bucketname,"rais/"+file)
-print("A")
 # uploadDirectory(filepath,bucketName)
