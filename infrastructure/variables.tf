@@ -1,5 +1,5 @@
 variable "base_bucket_name" {
-  default = "datalake-edc-modulo1-desafio"
+  default = "datalake-felipeschreiber-desafio"
 }
 
 variable "aws_region" {

@@ -14,7 +14,7 @@ spark = (
 # leitura inicial dos dados em CSV
 rais = (
     spark.read
-    .csv("s3://datalake-felipeschreiber-desafio/raw-data/radis/", inferSchema=True, header=True, sep=';', encoding="latin1")
+    .csv("s3://datalake-felipeschreiber-desafio/raw-data/rais/", inferSchema=True, header=True, sep=';', encoding="latin1")
 )
 
 
@@ -118,7 +118,7 @@ rais = (
     .write.mode('overwrite')
     .partitionBy('ano', 'uf')
     .format('parquet')
-    .save('s3://datalake-edc-modulo1-desafio/staging-zone/radis/')
+    .save('s3://datalake-felipeschreiber-desafio/staging-zone/rais/')
 )
 
 

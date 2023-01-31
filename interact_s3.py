@@ -1,6 +1,7 @@
 import boto3
 import os
 import py7zr
+import zipfile
 
 bucketName = "datalake-felipeschreiber-desafio"
 filepath = "/home/felipe/ftp.mtps.gov.br/pdet/microdados/RAIS/2020/"
@@ -12,6 +13,7 @@ try:
 except Exception:
 	print("Bucket já criado")
 	pass
+
 ## Extract files
 # for root,dirs,files in os.walk(filepath):
 # 	for file in files:
@@ -20,11 +22,16 @@ except Exception:
 # 		archive.extractall(path=filepath)
 # 		archive.close()
 # 		os.remove(filepath+file)
+
+## Pass to .zip
+
 ## Upload file
+
 s3_client = boto3.client("s3",region_name="us-east-2")
 def uploadDirectory(path,bucketname):
 	for root,dirs,files in os.walk(path):
 		for file in files:
-			s3_client.upload_file(os.path.join(root,file),bucketname,"rais/"+file)
+			if file.endswith(".zip"):
+				s3_client.upload_file(os.path.join(root,file),bucketname,"rais/"+file)
 
 uploadDirectory(filepath,bucketName)

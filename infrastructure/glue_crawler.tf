@@ -8,7 +8,7 @@ resource "aws_glue_crawler" "crawler" {
     role = "DesMod1GlueCrawlerRole"
 
     s3_target {
-      path = "s3://datalake-edc-modulo1-desafio/staging-zone/rais/"
+      path = "s3://datalake-felipeschreiber-desafio/staging-zone/rais/"
     }
 
     configuration = <<EOF

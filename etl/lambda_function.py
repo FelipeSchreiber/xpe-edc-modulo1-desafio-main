@@ -84,21 +84,6 @@ def handler(event, context):
                 
                 Steps=[
                 {
-                    'Name': 'Faz o upload dos dados no s3',
-                    'ActionOnFailure': 'CONTINUE',
-                    'HadoopJarStep': {
-                        'Jar': 'command-runner.jar',
-                        'Args': ['spark-submit',
-                                 '--packages', 'io.delta:delta-core_2.12:1.0.0', 
-                                 '--conf', 'spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension', 
-                                 '--conf', 'spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog', 
-                                 '--master', 'yarn',
-                                 '--deploy-mode', 'cluster',
-                                 's3://datalake-felipeschreiber-desafio/emr-code/pyspark/file_upload.py'
-                                 ]
-                    }
-                },
-                {
                     'Name': 'Converte dados para Parquet',
                     'ActionOnFailure': 'CONTINUE',
                     'HadoopJarStep': {
