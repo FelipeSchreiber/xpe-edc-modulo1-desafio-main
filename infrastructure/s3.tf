@@ -1,6 +1,7 @@
 # criar bucket
 resource "aws_s3_bucket" "datalake" {
   # parametros do objeto criado
+  acl = "private"
   bucket = "${var.base_bucket_name}"
 
   tags = {
@@ -24,10 +25,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "datalake-config" 
 
 }
 
-# cria config acl do bucket
-resource "aws_s3_bucket_acl" "datalake-acl" {
+# # cria config acl do bucket
+# resource "aws_s3_bucket_acl" "datalake-acl" {
   
-  bucket  = aws_s3_bucket.datalake.id
-  acl     = "private"
+#   bucket  = aws_s3_bucket.datalake.id
+#   acl     = "private"
 
-}
+# }
