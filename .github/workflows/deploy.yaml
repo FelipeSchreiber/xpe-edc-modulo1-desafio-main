@@ -25,7 +25,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        aws-region: us-east-2
 
     - name: Build Lambda package
       run: |
@@ -39,5 +39,4 @@ jobs:
         $COMMAND_IAC init
         $COMMAND_IAC validate
         $COMMAND_IAC plan
-        ls -a
         $COMMAND_IAC apply -auto-approve
