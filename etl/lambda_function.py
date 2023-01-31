@@ -7,7 +7,7 @@ def handler(event, context):
     client = boto3.client('emr', region_name='us-east-2')
 
     cluster_id = client.run_job_flow(
-                Name='EMR-edc-modulo1-desafio',
+                Name='EMR-Schreiber-delta',
                 ServiceRole='EMR_DefaultRole',
                 JobFlowRole='EMR_EC2_DefaultRole',
                 VisibleToAllUsers=True,
@@ -79,12 +79,8 @@ def handler(event, context):
                         }
                     }
                 ],
-                
-                StepConcurrencyLevel=1,
-                
-                Steps=[
-                {
-                    'Name': 'Converte dados para Parquet',
+                Steps=[{
+                    'Name': 'Delta Insert do ENEM',
                     'ActionOnFailure': 'CONTINUE',
                     'HadoopJarStep': {
                         'Jar': 'command-runner.jar',
@@ -95,7 +91,7 @@ def handler(event, context):
                                  '--master', 'yarn',
                                  '--deploy-mode', 'cluster',
                                  's3://datalake-felipeschreiber-desafio/emr-code/pyspark/01_parquet_creation.py'
-                                 ]
+                                ]
                     }
                 }],
             )

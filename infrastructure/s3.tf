@@ -1,33 +1,36 @@
-# criar bucket
-resource "aws_s3_bucket" "datalake" {
-  # parametros do objeto criado
-  bucket = "${var.base_bucket_name}"
+resource "aws_s3_bucket" "dl" {
+  bucket = "datalake-felipeschreiber-desafio"
+  acl    = "private"
 
   tags = {
-    CURSO     = "EDC"
-    MODULO    = "1"
-    USE_CASE  = "DESAFIO"
+    IES   = "IGTI",
+    CURSO = "EDC"
   }
 
-}
-
-# cria configuração de criptografia do bucket
-resource "aws_s3_bucket_server_side_encryption_configuration" "datalake-config" {
-  
-  bucket = aws_s3_bucket.datalake.id
-  
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
     }
   }
-
 }
 
-# cria config acl do bucket
-resource "aws_s3_bucket_acl" "datalake-acl" {
-  
-  bucket  = aws_s3_bucket.datalake.id
-  acl     = "private"
 
+resource "aws_s3_bucket" "stream" {
+  bucket = "schreiber-streaming-bucket"
+  acl    = "private"
+
+  tags = {
+    IES   = "IGTI",
+    CURSO = "EDC"
+  }
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
 }
