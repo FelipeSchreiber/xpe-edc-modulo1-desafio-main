@@ -1,41 +1,37 @@
-# ##################
-# LAMBDA ROLE
-# ##################
+resource "aws_iam_role" "lambda" {
+  name = "IGTILambdaRole"
 
-resource "aws_iam_role" "lambda_role" {
-    
-    name = "DesafioExecutaEMR"
-
-    assume_role_policy = <<EOF
+  assume_role_policy = <<EOF
 {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-        "Action": "sts:AssumeRole",
-        "Principal": {
-            "Service": "lambda.amazonaws.com"
-        },
-        "Effect": "Allow",
-        "Sid": "AssumeRole"
-        }
-    ]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": "AssumeRole"
+    }
+  ]
 }
 EOF
 
-    tags = {
-        CURSO     = "EDC"
-        MODULO    = "1"
-        USE_CASE  = "DESAFIO"
-    }
+  tags = {
+    IES   = "IGTI",
+    CURSO = "EDC"
+  }
+
 }
 
-resource "aws_iam_policy" "lambda_policy" {
 
-    name        = "DesMod1AWSLambdaBasicExecutionRolePolicy"
-    path        = "/"
-    description = "Provide write permission to CloudWatch logs, S3 buckets and EMR steps"
 
-    policy = <<EOF
+resource "aws_iam_policy" "lambda" {
+  name        = "IGTIAWSLambdaBasicExecutionRolePolicy"
+  path        = "/"
+  description = "Provides write permissions to CloudWatch Logs, S3 buckets and EMR Steps"
+
+  policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -64,8 +60,8 @@ resource "aws_iam_policy" "lambda_policy" {
         },
         {
           "Action": "iam:PassRole",
-          "Resource": ["arn:aws:iam::776401046809:role/EMR_DefaultRole",
-                       "arn:aws:iam::776401046809:role/EMR_EC2_DefaultRole"],
+          "Resource": ["arn:aws:iam::127012818163:role/EMR_DefaultRole",
+                       "arn:aws:iam::127012818163:role/EMR_EC2_DefaultRole"],
           "Effect": "Allow"
         }
     ]
@@ -73,17 +69,71 @@ resource "aws_iam_policy" "lambda_policy" {
 EOF
 }
 
+
 resource "aws_iam_role_policy_attachment" "lambda_attach" {
-    role        = aws_iam_role.lambda_role.name
-    policy_arn  = aws_iam_policy.lambda_policy.arn
+  role       = aws_iam_role.lambda.name
+  policy_arn = aws_iam_policy.lambda.arn
 }
 
-# ##################
-# GLUE ROLE
-# ##################
+#############
+## KINESIS ##
+#############
+
+# resource "aws_iam_policy" "firehose" {
+#   name        = "IGTIFirehosePolicy"
+#   path        = "/"
+#   description = "Provides write permissions to CloudWatch Logs and S3"
+
+#   policy = <<EOF
+# {
+#     "Version": "2012-10-17",
+#     "Statement": [
+#         {
+#             "Effect": "Allow",
+#             "Action": [
+#                 "logs:CreateLogGroup",
+#                 "logs:CreateLogStream",
+#                 "logs:PutLogEvents",
+#                 "glue:*"
+#             ],
+#             "Resource": "*"
+#         },
+#         {
+#             "Effect": "Allow",
+#             "Action": [
+#                 "s3:AbortMultipartUpload",
+#                 "s3:GetBucketLocation",
+#                 "s3:GetObject",
+#                 "s3:GetObjectVersion",
+#                 "s3:DeleteObject",
+#                 "s3:ListBucket",
+#                 "s3:ListBucketMultipartUploads",
+#                 "s3:PutObject"
+#             ],
+#             "Resource": [
+#               "${aws_s3_bucket.stream.arn}",
+#               "${aws_s3_bucket.stream.arn}/*"
+#             ]
+#         }
+#     ]
+# }
+# EOF
+# }
+
+
+
+# resource "aws_iam_role_policy_attachment" "firehose_attach" {
+#   role       = aws_iam_role.firehose_role.name
+#   policy_arn = aws_iam_policy.firehose.arn
+# }
+
+
+###############
+## GLUE ROLE ##
+###############
 
 resource "aws_iam_role" "glue_role" {
-  name = "DesMod1GlueCrawlerRole"
+  name = "IGTIGlueCrawlerRole"
 
   assume_role_policy = <<EOF
 {
@@ -102,16 +152,15 @@ resource "aws_iam_role" "glue_role" {
 EOF
 
   tags = {
-    CURSO     = "EDC"
-    MODULO    = "1"
-    USE_CASE  = "DESAFIO"
+    IES = "IGTI"
+    CURSO = "EDC"
   }
 
 }
 
 
 resource "aws_iam_policy" "glue_policy" {
-  name        = "DesMod1AWSGlueServiceRole"
+  name        = "IGTIAWSGlueServiceRole"
   path        = "/"
   description = "Policy for AWS Glue service role which allows access to related services including EC2, S3, and Cloudwatch Logs"
 
