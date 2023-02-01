@@ -1,13 +1,12 @@
 resource "aws_iam_role" "lambda" {
   name = "IGTILambdaRole"
 
-  assume_role_policy = <<EOF
+assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Action": ["sts:AssumeRole","iam:PassRole"],
-      "Resource":"arn:aws:iam::689150947157:role/EMR_DefaultRole",
+      "Action": "sts:AssumeRole",
       "Principal": {
         "Service": "lambda.amazonaws.com"
       },
@@ -41,9 +40,10 @@ resource "aws_iam_policy" "lambda" {
             "Action": [
                 "logs:CreateLogGroup",
                 "logs:CreateLogStream",
-                "logs:PutLogEvents"
+                "logs:PutLogEvents",
+                "iam:PassRole"
             ],
-            "Resource": "*"
+            "Resource": ["*","arn:aws:iam::689150947157:role/EMR_DefaultRole"]
         },
         {
             "Effect": "Allow",
