@@ -24,10 +24,13 @@ EOF
 
 }
 
+
+
 resource "aws_iam_policy" "lambda" {
   name        = "IGTIAWSLambdaBasicExecutionRolePolicy"
   path        = "/"
   description = "Provides write permissions to CloudWatch Logs, S3 buckets and EMR Steps"
+
   policy = <<EOF
 {
     "Version": "2012-10-17",
@@ -66,10 +69,64 @@ resource "aws_iam_policy" "lambda" {
 EOF
 }
 
+
 resource "aws_iam_role_policy_attachment" "lambda_attach" {
   role       = aws_iam_role.lambda.name
   policy_arn = aws_iam_policy.lambda.arn
 }
+
+#############
+## KINESIS ##
+#############
+
+# resource "aws_iam_policy" "firehose" {
+#   name        = "IGTIFirehosePolicy"
+#   path        = "/"
+#   description = "Provides write permissions to CloudWatch Logs and S3"
+
+#   policy = <<EOF
+# {
+#     "Version": "2012-10-17",
+#     "Statement": [
+#         {
+#             "Effect": "Allow",
+#             "Action": [
+#                 "logs:CreateLogGroup",
+#                 "logs:CreateLogStream",
+#                 "logs:PutLogEvents",
+#                 "glue:*"
+#             ],
+#             "Resource": "*"
+#         },
+#         {
+#             "Effect": "Allow",
+#             "Action": [
+#                 "s3:AbortMultipartUpload",
+#                 "s3:GetBucketLocation",
+#                 "s3:GetObject",
+#                 "s3:GetObjectVersion",
+#                 "s3:DeleteObject",
+#                 "s3:ListBucket",
+#                 "s3:ListBucketMultipartUploads",
+#                 "s3:PutObject"
+#             ],
+#             "Resource": [
+#               "${aws_s3_bucket.stream.arn}",
+#               "${aws_s3_bucket.stream.arn}/*"
+#             ]
+#         }
+#     ]
+# }
+# EOF
+# }
+
+
+
+# resource "aws_iam_role_policy_attachment" "firehose_attach" {
+#   role       = aws_iam_role.firehose_role.name
+#   policy_arn = aws_iam_policy.firehose.arn
+# }
+
 
 ###############
 ## GLUE ROLE ##
