@@ -6,7 +6,8 @@ resource "aws_iam_role" "lambda" {
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Action": "sts:AssumeRole",
+      "Action": ["sts:AssumeRole","iam:PassRole"],
+      "Resource":"arn:aws:iam::689150947157:role/EMR_DefaultRole",
       "Principal": {
         "Service": "lambda.amazonaws.com"
       },
