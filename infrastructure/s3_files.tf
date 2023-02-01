@@ -1,6 +1,6 @@
 resource "aws_s3_object" "parquet_creation" {
 
-  bucket = base_bucket_name.datalake.id
+  bucket = aws_s3_bucket.dl.id
   # remote location for the file
   key = "emr-code/pyspark/01_parquet_creation.py"
   acl = "private"
