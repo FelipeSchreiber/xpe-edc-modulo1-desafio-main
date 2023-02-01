@@ -28,7 +28,6 @@ resource "aws_iam_policy" "lambda" {
   name        = "IGTIAWSLambdaBasicExecutionRolePolicy"
   path        = "/"
   description = "Provides write permissions to CloudWatch Logs, S3 buckets and EMR Steps"
-
   policy = <<EOF
 {
     "Version": "2012-10-17",
