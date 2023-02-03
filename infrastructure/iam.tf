@@ -255,7 +255,7 @@ resource "aws_iam_role_policy_attachment" "glue_attach" {
 
 resource "aws_iam_role" "StepFunctionRole" {
   name               = "StepFunctionRole"
-  policy = <<EOF
+  assume_role_policy = <<EOF
   {
     "Version": "2012-10-17",
     "Statement": [
@@ -270,6 +270,7 @@ resource "aws_iam_role" "StepFunctionRole" {
   }
   EOF 
 }
+
 resource "aws_iam_role_policy_attachment" "step_function_attach_policy_awsglueservicerole" {
   role = aws_iam_role.StepFunctionRole.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
