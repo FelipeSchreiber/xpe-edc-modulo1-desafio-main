@@ -1,124 +1,156 @@
-from pyspark.sql import functions as f
+# # Bootcamp da Xpe
+# ## Engenharia de Dados em Cloud
+# ### Módulo 1: Fundamentos em Arquitetura de Dados e Soluções em Nuvem
+# 
+# ### Objetivos:
+# >> Implementação de um Data Lake; <br>
+# >> Armazenamento de dados em Storage camada Raw; <br>
+# >> Armazenamento de dados em Storage camada Bronze; <br>
+# >> Armazenamento de dados em Storage camada Silver; <br>
+# >> Implementação de Processamento de Big Data; <br>
+# >> IaC de toda estrutura com Terraform; <br>
+# >> Esteiras de Deploy com Github. <br>
+# 
+# ### Esse notebook trata dos itens 2 e 3 do desafio
+# 2. Realizar tratamento no dataset da RAIS 2020  <br>
+#     a. Modifique os nomes das colunas, trocando espaços por “_”; <br>
+#     b. Retire acentos e caracter especiais das colunas; <br>
+#     c. Transforme todas as colunas em letras minúsculas; <br>
+#     d. Crie uma coluna “uf” através da coluna "municipio"; <br>
+#     e. Realize os ajustes no tipo de dado para as colunas de remuneração.
+# 
+# 3. Transformar os dados no formato parquet e escrevê-los na zona staging ou zona silver do seu Data Lake.
+
+import pyspark
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, lit, input_file_name, regexp_replace
+from pyspark.sql import functions as spkFn
+import unicodedata
+import re
+# #### Inicia uma `Session` do Spark
+spark = (SparkSession.builder
+                     .appName("readFile")
+                     .getOrCreate())  
+# #### Path para diretório source e target
+## Ambiente Cloud AWS
+## Path Cloud AWS
+pathRaw    = f"s3://datalake-felipeschreiber-desafio/rais/raw-data/"
+pathBronze = f"s3://datalake-felipeschreiber-desafio/rais/staging-zone/"
 
+#### Schema DDL
 
+fileNameSchema = "RAIS_VINC_PUB_NORTE.txt.gz"
+filePathSchema = f"{pathRaw}/{fileNameSchema}"
 
-# Cria objeto da Spark Session
-spark = (
-    SparkSession.builder.appName("DesafioModulo1")
-    .getOrCreate()
-)
+fileDfSchema   = (spark.read
+                       .format("csv")
+                       .option("header","true")
+                       .option("sep", ";")
+                       .option("encoding", "latin1")
+                       .option("inferSchema", "true")
+                       .load(filePathSchema)
+                       .schema)
 
+schemaJson     = fileDfSchema.json()
+schemaDDL      = spark.sparkContext._jvm.org.apache.spark.sql.types.DataType.fromJson(schemaJson).toDDL()
 
+#### Ler arquivos com a API DataFrameRead
+## Read
+rais2020_csv = (spark.read
+                     .format("csv")
+                     .option("header","true")
+                     .option("sep", ";")
+                     .option("encoding", "latin1")
+                     .option("inferSchema", "true")
+                     .schema(schemaDDL)
+                     .load(pathRaw)
+                     .withColumn("file_name", lit(input_file_name())))
 
-# leitura inicial dos dados em CSV
-rais = (
-    spark.read
-    .csv("s3://datalake-felipeschreiber-desafio/rais/raw-data/", inferSchema=True, header=True, sep=';', encoding="latin1")
-)
+# ### Funções para normalizar as colunas
+# 
+# > ***normalizar_colunas***
+# 1. Função para normalizar as colunas de um dataframe
+#     - Retira espaços vazios e incluir um underline (Ex: `Sobre Nome -> Sobre_Nome`)
+#     - Retira ponto e incluir um underline (Ex: `Sobre.Nome -> Sobre_Nome`)
+#     - Formata todas as colunas com letras minúsculas (Ex: `Sobre_Nome -> sobre_nome`)
+# 
+# > ***normalizar_acentos***
+# 2. Função para retirar os acentos de todas as colunas de um dataframe
+#     - Remover espaços nas extremidades (Ex: `"  sobre_nome  " -> "sobre_nome"`)
+#     - Replace de carácteres especiais por underline (Ex: `sobre@nome -> sobre_nome`)
+#     - Remover underlines nas extremidades (Ex: `_sobre_nome_ -> sobre_nome`)
+#     - Remover acentuação (Ex: `média_mês -> media_mes`)
 
+## Função para normalizar as colunas de um dataframe
+def normalizar_colunas(df):
+  try:
+    new_column_spaces_lower = (list(map(lambda x: x.replace(" ", "_")
+                                                   .replace(".", "_")
+                                                   .lower(),
+                                                 df.columns)))
+    return df.toDF(*new_column_spaces_lower) 
+  except Exception as err:
+        error_message = f"Erro ao normalizar nomes das colunas: {str(err)}"
+        print(error_message)
+        raise ValueError(error_message)
 
-# normaliza nome das colunas, sem espaço e minúsculas
-rais = (
-    rais
-    .withColumnRenamed('Bairros SP', 'bairros_sp')
-    .withColumnRenamed('Bairros Fortaleza', 'bairros_fortaleza')
-    .withColumnRenamed('Bairros RJ', 'bairros_rj')
-    .withColumnRenamed('Causa Afastamento 1', 'causa_afastamento_1')
-    .withColumnRenamed('Causa Afastamento 2', 'causa_afastamento_2')
-    .withColumnRenamed('Causa Afastamento 3', 'causa_afastamento_3')
-    .withColumnRenamed('Motivo Desligamento', 'motivo_desligamento')
-    .withColumnRenamed(rais.columns[7], 'cbo_ocupacao_2002')
-    .withColumnRenamed('CNAE 2.0 Classe', 'cnae_2_0_classe')
-    .withColumnRenamed('CNAE 95 Classe', 'cnae_95_classe')
-    .withColumnRenamed('Distritos SP', 'distritos_sp')
-    .withColumnRenamed(rais.columns[11], 'vinculo_ativo_31_12')
-    .withColumnRenamed(rais.columns[12], 'faixa_etaria')
-    .withColumnRenamed('Faixa Hora Contrat', 'faixa_hora_contrat')
-    .withColumnRenamed('Faixa Remun Dezem (SM)', 'faixa_remun_dezem_sm')
-    .withColumnRenamed(rais.columns[15], 'faixa_remun_media_sm')
-    .withColumnRenamed('Faixa Tempo Emprego', 'faixa_tempo_emprego')
-    .withColumnRenamed(rais.columns[17], 'escolaridade_apos_2005')
-    .withColumnRenamed('Qtd Hora Contr', 'qtd_hora_contr')
-    .withColumnRenamed('Idade', 'idade')
-    .withColumnRenamed('Ind CEI Vinculado', 'ind_cei_vinculado')
-    .withColumnRenamed('Ind Simples', 'ind_simples')
-    .withColumnRenamed(rais.columns[22], 'mes_admissao')
-    .withColumnRenamed(rais.columns[23], 'mes_desligamento')
-    .withColumnRenamed('Mun Trab', 'mun_trab')
-    .withColumnRenamed(rais.columns[25], 'municipio')
-    .withColumnRenamed('Nacionalidade', 'nacionalidade')
-    .withColumnRenamed(rais.columns[27], 'natureza_juridica')
-    .withColumnRenamed('Ind Portador Defic', 'ind_portador_defic')
-    .withColumnRenamed('Qtd Dias Afastamento', 'qtd_dias_afastamento')
-    .withColumnRenamed(rais.columns[30], 'raca_cor')
-    .withColumnRenamed(rais.columns[31], 'regioes_adm_df')
-    .withColumnRenamed('Vl Remun Dezembro Nom', 'vl_remun_dezembro_nom')
-    .withColumnRenamed('Vl Remun Dezembro (SM)', 'vl_remun_dezembro_sm')
-    .withColumnRenamed(rais.columns[34], 'vl_remun_media_nom')
-    .withColumnRenamed(rais.columns[35], 'vl_remun_media_sm')
-    .withColumnRenamed('CNAE 2.0 Subclasse', 'cnae_2_0_subclasse')
-    .withColumnRenamed('Sexo Trabalhador', 'sexo_trabalhador')
-    .withColumnRenamed('Tamanho Estabelecimento', 'tamanho_estabelecimento')
-    .withColumnRenamed('Tempo Emprego', 'tempo_emprego')
-    .withColumnRenamed(rais.columns[40], 'tipo_admissao')
-    .withColumnRenamed('Tipo Estab41', 'tipo_estab41')
-    .withColumnRenamed('Tipo Estab42', 'tipo_estab42')
-    .withColumnRenamed('Tipo Defic', 'tipo_defic')
-    .withColumnRenamed(rais.columns[44], 'tipo_vinculo')
-    .withColumnRenamed('IBGE Subsetor', 'ibge_subsetor')
-    .withColumnRenamed('Vl Rem Janeiro SC', 'vl_rem_janeiro_sc')
-    .withColumnRenamed('Vl Rem Fevereiro SC', 'vl_rem_fevereiro_sc')
-    .withColumnRenamed(rais.columns[48], 'vl_rem_marco_sc')
-    .withColumnRenamed('Vl Rem Abril SC', 'vl_rem_abril_sc')
-    .withColumnRenamed('Vl Rem Maio SC', 'vl_rem_maio_sc')
-    .withColumnRenamed('Vl Rem Junho SC', 'vl_rem_junho_sc')
-    .withColumnRenamed('Vl Rem Julho SC', 'vl_rem_julho_sc')
-    .withColumnRenamed('Vl Rem Agosto SC', 'vl_rem_agosto_sc')
-    .withColumnRenamed('Vl Rem Setembro SC', 'vl_rem_setembro_sc')
-    .withColumnRenamed('Vl Rem Outubro SC', 'vl_rem_outubro_sc')
-    .withColumnRenamed('Vl Rem Novembro SC', 'vl_rem_novembro_sc')
-    .withColumnRenamed('Ano Chegada Brasil', 'ano_chegada_brasil')
-    .withColumnRenamed('Ind Trab Intermitente', 'ind_trab_intermitente')
-    .withColumnRenamed('Ind Trab Parcial', 'ind_trab_parcial')
-)
+## Função para retirar os acentos de todas as colunas de um dataframe
+def normalizar_acentos(str):
+  try:
+    new_str = str
+    # Remover espaços nas extremidades
+    new_str = new_str.strip()
+    # Replace de carácteres especiais por underline
+    new_str = re.sub(r"[^\w]", "_", new_str)
+    # Remover underlines nas extremidades
+    new_str = new_str.strip("_")
+    # Remover 2 underlines juntos e deixar apenas 1
+    new_str = new_str.replace("__", "_")
+    # Remover acentuação
+    new_str = unicodedata.normalize('NFKD', new_str)
+    new_str = u"".join([c for c in new_str if not unicodedata.combining(c)])
+    return new_str
+  except Exception as err:
+    error_message = f"Erro ao normalizar nomes das colunas: {str(err)}"
+    print(error_message)
+    raise ValueError(error_message)
 
+renamed_df = normalizar_colunas(rais2020_csv)
 
-# cria coluna com numero da UF, baseado nos dois primeiros numeros do município
-rais = rais.withColumn("uf", f.col("municipio").cast('string').substr(1,2).cast('int'))
+rais2020_renamed = renamed_df.select([spkFn.col(col).alias(normalizar_acentos(col)) for col in renamed_df.columns])
+rais2020_fim = (
+                 rais2020_renamed
+                        .withColumn("ano", lit("2020").cast('int'))
+                        .withColumn("uf", col("municipio").cast('string').substr(1,2).cast('int'))
+                        .withColumn("mes_desligamento", col('mes_desligamento').cast('int'))
+                        .withColumn("vl_remun_dezembro_nom", regexp_replace("vl_remun_dezembro_nom", ',', '.').cast('double'))
+                        .withColumn("vl_remun_dezembro_sm", regexp_replace("vl_remun_dezembro_sm", ',', '.').cast('double'))
+                        .withColumn("vl_remun_media_nom", regexp_replace("vl_remun_media_nom", ',', '.').cast('double'))
+                        .withColumn("vl_remun_media_sm", regexp_replace("vl_remun_media_sm", ',', '.').cast('double'))
+                        .withColumn("vl_rem_janeiro_sc", regexp_replace("vl_rem_janeiro_sc", ',', '.').cast('double'))
+                        .withColumn("vl_rem_fevereiro_sc", regexp_replace("vl_rem_fevereiro_sc", ',', '.').cast('double'))
+                        .withColumn("vl_rem_marco_sc", regexp_replace("vl_rem_marco_sc", ',', '.').cast('double'))
+                        .withColumn("vl_rem_abril_sc", regexp_replace("vl_rem_abril_sc", ',', '.').cast('double'))
+                        .withColumn("vl_rem_maio_sc", regexp_replace("vl_rem_maio_sc", ',', '.').cast('double'))
+                        .withColumn("vl_rem_junho_sc", regexp_replace("vl_rem_junho_sc", ',', '.').cast('double'))
+                        .withColumn("vl_rem_julho_sc", regexp_replace("vl_rem_julho_sc", ',', '.').cast('double'))
+                        .withColumn("vl_rem_agosto_sc", regexp_replace("vl_rem_agosto_sc", ',', '.').cast('double'))
+                        .withColumn("vl_rem_setembro_sc", regexp_replace("vl_rem_setembro_sc", ',', '.').cast('double'))
+                        .withColumn("vl_rem_outubro_sc", regexp_replace("vl_rem_outubro_sc", ',', '.').cast('double'))
+                        .withColumn("vl_rem_novembro_sc", regexp_replace("vl_rem_novembro_sc", ',', '.').cast('double'))
+                        .drop("vl_remun_dezembro__sm", "vl_remun_media__sm")
+                )
 
-
-
-# converte colunas de remuneração para double, e mes desligamento para integer
-rais = (
-    rais
-    .withColumn("mes_desligamento", f.col('mes_desligamento').cast('int'))
-    .withColumn("vl_remun_dezembro_nom", f.regexp_replace("vl_remun_dezembro_nom", ',', '.').cast('double'))
-    .withColumn("vl_remun_dezembro_sm", f.regexp_replace("vl_remun_dezembro_sm", ',', '.').cast('double'))
-    .withColumn("vl_remun_media_nom", f.regexp_replace("vl_remun_media_nom", ',', '.').cast('double'))
-    .withColumn("vl_remun_media_sm", f.regexp_replace("vl_remun_media_sm", ',', '.').cast('double'))
-    .withColumn("vl_rem_janeiro_sc", f.regexp_replace("vl_rem_janeiro_sc", ',', '.').cast('double'))
-    .withColumn("vl_rem_fevereiro_sc", f.regexp_replace("vl_rem_fevereiro_sc", ',', '.').cast('double'))
-    .withColumn("vl_rem_marco_sc", f.regexp_replace("vl_rem_marco_sc", ',', '.').cast('double'))
-    .withColumn("vl_rem_abril_sc", f.regexp_replace("vl_rem_abril_sc", ',', '.').cast('double'))
-    .withColumn("vl_rem_maio_sc", f.regexp_replace("vl_rem_maio_sc", ',', '.').cast('double'))
-    .withColumn("vl_rem_junho_sc", f.regexp_replace("vl_rem_junho_sc", ',', '.').cast('double'))
-    .withColumn("vl_rem_julho_sc", f.regexp_replace("vl_rem_julho_sc", ',', '.').cast('double'))
-    .withColumn("vl_rem_agosto_sc", f.regexp_replace("vl_rem_agosto_sc", ',', '.').cast('double'))
-    .withColumn("vl_rem_setembro_sc", f.regexp_replace("vl_rem_setembro_sc", ',', '.').cast('double'))
-    .withColumn("vl_rem_outubro_sc", f.regexp_replace("vl_rem_outubro_sc", ',', '.').cast('double'))
-    .withColumn("vl_rem_novembro_sc", f.regexp_replace("vl_rem_novembro_sc", ',', '.').cast('double'))
-)
-
-
-# salva os dados como Parquet no ambiente de staging
 (
-    rais
-    .coalesce(50)
-    .write.mode('overwrite')
-    .partitionBy('ano', 'uf')
-    .format('parquet')
-    .save('s3://datalake-felipeschreiber-desafio/rais/staging-zone')
+    rais2020_fim.write
+                .format('parquet')
+                .mode('overwrite')
+                .partitionBy('ano', 'uf')
+                .save(pathBronze)
 )
 
-
+rais2020_parquet = (
+                      spark.read
+                           .format('parquet')
+                           .load(pathBronze)
+                   )   
