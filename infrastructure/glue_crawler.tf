@@ -2,7 +2,7 @@ resource "aws_glue_catalog_database" "crawler_db" {
     name = "desafio_crawler_db"
 }
 
-resource "aws_glue_crawler" "crawler" {
+resource "aws_glue_crawler" "desafio_crawler" {
     database_name = aws_glue_catalog_database.crawler_db.name
     name = "desafio_crawler"
     role = "DesMod1GlueCrawlerRole"

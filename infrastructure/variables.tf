@@ -10,4 +10,8 @@ variable "lambda_function_name" {
   default = "DesafioExecutaEMR"
 }
 
-
+variable "account_id" {
+  description = "identifica o account id"
+  type        = string
+  default     = "689150947157"
+}
