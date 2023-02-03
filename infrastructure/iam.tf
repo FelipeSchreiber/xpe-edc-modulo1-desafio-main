@@ -24,8 +24,6 @@ EOF
 
 }
 
-
-
 resource "aws_iam_policy" "lambda" {
   name        = "IGTIAWSLambdaBasicExecutionRolePolicy"
   path        = "/"
@@ -159,7 +157,6 @@ EOF
 
 }
 
-
 resource "aws_iam_policy" "glue_policy" {
   name        = "IGTIAWSGlueServiceRole"
   path        = "/"
@@ -253,4 +250,58 @@ EOF
 resource "aws_iam_role_policy_attachment" "glue_attach" {
   role       = aws_iam_role.glue_role.name
   policy_arn = aws_iam_policy.glue_policy.arn
+}
+
+
+resource "aws_iam_role" "StepFunctionRole" {
+  name               = "StepFunctionRole"
+  policy = <<EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": {
+          "Service": "states.amazonaws.com"
+        },
+        "Action": "sts:AssumeRole"
+      }
+    ]
+  }
+  EOF 
+}
+resource "aws_iam_role_policy_attachment" "step_function_attach_policy_awsglueservicerole" {
+  role = aws_iam_role.StepFunctionRole.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+}
+
+resource "aws_iam_role_policy_attachment" "step_function_attach_policy_awsstepfunctionfullaccess" {
+  role = aws_iam_role.StepFunctionRole.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "step_function_attach_policy_cloudwatchlogsfullaccess" {
+  role = aws_iam_role.StepFunctionRole.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "step_function_attach_policy_awslambdarole" {
+  role       = aws_iam_role.StepFunctionRole.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaRole"
+}
+resource "aws_iam_role_policy_attachment" "EMR_RunJob_Flow_Management_Scoped_Access_Policy" {
+  role       = aws_iam_role.StepFunctionRole.name
+  policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/ElasticMapReduceRunJobFlowManagementScopedAccessPolicy-e0978da6-15ff-49d1-9f21-da5bf57bc357"  
+}
+resource "aws_iam_role_policy_attachment" "EMR_Add_JobFlow_StepsManagement_FullAccess" {
+  role       = aws_iam_role.StepFunctionRole.name
+  policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/ElasticMapReduceAddJobFlowStepsManagementFullAccess-787682d9-dae7-4225-bd9b-2dede6b4fccd"
+}
+resource "aws_iam_role_policy_attachment" "EMR_Terminate_JobFlows_Management_FullAccess_Policy" {
+  role       = aws_iam_role.StepFunctionRole.name
+  policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/ElasticMapReduceTerminateJobFlowsManagementFullAccessPolicy-6352a2c4-0f33-4ac6-9cd7-0b1d345a541c"
+}
+resource "aws_iam_role_policy_attachment" "XRay_Access_Policy" {
+  role       = aws_iam_role.StepFunctionRole.name
+  policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/XRayAccessPolicy-feea7911-1622-45ee-aa83-d4bcf8b31242"
 }
