@@ -1,18 +1,126 @@
-resource "aws_lambda_function" "executa_emr" {
-  filename      = "lambda_function_payload.zip"
-  function_name = var.lambda_function_name
-  role          = aws_iam_role.lambda.arn
-  handler       = "lambda_function.handler"
-  memory_size   = 128
-  timeout       = 30
-
-  source_code_hash = filebase64sha256("lambda_function_payload.zip")
-
-  runtime = "python3.8"
-  
-  tags = {
-    IES   = "IGTI"
-    CURSO = "EDC"
+resource "aws_sfn_state_machine" "stepfunction" {
+  name       = "StepFunctionExecEmr"
+  role_arn   = "arn:aws:iam::${var.account_id}:role/StepFunctionRole" #trocar para a role do ambiente
+  definition = <<EOF
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "EMR CreateCluster",
+  "States": {
+    "EMR CreateCluster": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:createCluster.sync",
+      "Parameters": {
+        "Name": "EMR-Schreiber-run-desafio",
+        "Configurations": [
+          {
+            "Classification": "spark-hive-site",
+            "Properties": {
+                "hive.metastore.client.factory.class": "com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory"
+            }
+          },
+          {
+            "Classification": "spark-defaults",
+            "Properties": {
+                "spark.submit.deployMode": "cluster",
+                "spark.speculation": "false",
+                "spark.sql.adaptive.enabled": "true",
+                "spark.serializer": "org.apache.spark.serializer.KryoSerializer"
+            }
+          },
+          {
+            "Classification": "spark",
+            "Properties": {
+                "maximizeResourceAllocation": "true"
+            }
+          }
+        ],
+        "ServiceRole": "EMR_DefaultRole",
+        "JobFlowRole": "EMR_EC2_DefaultRole",
+        "ReleaseLabel": "emr-6.8.0",
+        "Applications": [
+          {"Name": "Hive"},
+          {"Name": "Hadoop"},
+          {"Name": "JupyterEnterpriseGateway"},
+          {"Name": "JupyterHub"},
+          {"Name": "Hue"},
+          {"Name": "Pig"},
+          {"Name": "Livy"},
+          {"Name": "Spark"}
+        ],
+        "LogUri": "'s3://datalake-felipeschreiber-desafio/emr-logs'",
+        "VisibleToAllUsers": true,
+        "Instances": {
+          "KeepJobFlowAliveWhenNoSteps": true,
+          "InstanceFleets": [
+            {
+              "InstanceFleetType": "MASTER",
+              "Name": "Master",
+              "TargetOnDemandCapacity": 1,
+              "InstanceTypeConfigs": [
+                {
+                  "InstanceType": "m5d.xlarge",
+                  'InstanceCount': 1
+                }
+              ]
+            },
+            {
+              "InstanceFleetType": "CORE",
+              "Name": "Core",
+              "TargetOnDemandCapacity": 2,
+              "InstanceTypeConfigs": [
+                {
+                  "InstanceType": "m5d.xlarge",
+                  'Market': 'SPOT',
+                  'InstanceCount': 1
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ResultPath": "$.CreateClusterResult",
+      "Next": "Run_ETL"
+    },
+    "Run_ETL":{
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:addStep.sync",
+      "Parameters": {
+        "ClusterId.$": "$.CreateClusterResult.ClusterId",
+        "Step": {
+          "Name": "SparkJob-desafio-mod1",
+          "ActionOnFailure": "TERMINATE_CLUSTER",
+          "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args": [
+              "spark-submit",
+              "--master", "yarn",
+              "--deploy-mode", "cluster",
+              "s3://datalake-felipeschreiber-desafio/emr-code/pyspark/01_parquet_creation.py"
+            ]
+          }
+        }
+      },
+      "ResultPath": "$.sparkResult",
+      "Next":"Terminate_Cluster"
+    },
+    "Terminate_Cluster": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:terminateCluster.sync",
+      "Parameters": {
+        "ClusterId.$": "$.CreateClusterResult.ClusterId"
+    },
+    "ResultPath": "$.sparkResult",
+    "Next":"StartCrawler"
+    },
+    "StartCrawler": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
+      "Parameters": {
+        "Name": "desafio_crawler"
+      },
+      "End": true
+    }
   }
-
+  }  
+EOF
 }
