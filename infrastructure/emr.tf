@@ -55,22 +55,21 @@ resource "aws_sfn_state_machine" "stepfunction" {
             {
               "InstanceFleetType": "MASTER",
               "Name": "Master",
+              "",
               "TargetOnDemandCapacity": 1,
               "InstanceTypeConfigs": [
                 {
-                  "InstanceType": "m5d.xlarge",
-                  "InstanceCount": 1
+                  "InstanceType": "m5d.xlarge"
                 }
               ]
             },
             {
               "InstanceFleetType": "CORE",
               "Name": "Core",
-              "TargetOnDemandCapacity": 2,
+              "TargetSpotCapacity": 2,
               "InstanceTypeConfigs": [
                 {
-                  "InstanceType": "m5d.xlarge",
-                  "InstanceCount": 1
+                  "InstanceType": "m5d.xlarge"
                 }
               ]
             }
