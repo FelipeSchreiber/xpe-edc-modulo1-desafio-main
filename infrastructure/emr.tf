@@ -59,7 +59,6 @@ resource "aws_sfn_state_machine" "stepfunction" {
               "InstanceTypeConfigs": [
                 {
                   "InstanceType": "m5d.xlarge",
-                  "Market": "SPOT",
                   "InstanceCount": 1
                 }
               ]
@@ -71,7 +70,6 @@ resource "aws_sfn_state_machine" "stepfunction" {
               "InstanceTypeConfigs": [
                 {
                   "InstanceType": "m5d.xlarge",
-                  "Market": "SPOT",
                   "InstanceCount": 1
                 }
               ]
