@@ -47,7 +47,7 @@ resource "aws_sfn_state_machine" "stepfunction" {
           {"Name": "Livy"},
           {"Name": "Spark"}
         ],
-        "LogUri": "'s3://datalake-felipeschreiber-desafio/emr-logs'",
+        "LogUri": "s3://datalake-felipeschreiber-desafio/emr-logs",
         "VisibleToAllUsers": true,
         "Instances": {
           "KeepJobFlowAliveWhenNoSteps": true,
@@ -59,7 +59,8 @@ resource "aws_sfn_state_machine" "stepfunction" {
               "InstanceTypeConfigs": [
                 {
                   "InstanceType": "m5d.xlarge",
-                  'InstanceCount': 1
+                  "Market": "SPOT",
+                  "InstanceCount": 1
                 }
               ]
             },
@@ -70,8 +71,8 @@ resource "aws_sfn_state_machine" "stepfunction" {
               "InstanceTypeConfigs": [
                 {
                   "InstanceType": "m5d.xlarge",
-                  'Market': 'SPOT',
-                  'InstanceCount': 1
+                  "Market": "SPOT",
+                  "InstanceCount": 1
                 }
               ]
             }
