@@ -290,19 +290,19 @@ resource "aws_iam_role_policy_attachment" "step_function_attach_policy_awslambda
   role       = aws_iam_role.StepFunctionRole.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaRole"
 }
-resource "aws_iam_role_policy_attachment" "EMR_RunJob_Flow_Management_Scoped_Access_Policy" {
-  role       = aws_iam_role.StepFunctionRole.name
-  policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/ElasticMapReduceRunJobFlowManagementScopedAccessPolicy-e0978da6-15ff-49d1-9f21-da5bf57bc357"  
-}
-resource "aws_iam_role_policy_attachment" "EMR_Add_JobFlow_StepsManagement_FullAccess" {
-  role       = aws_iam_role.StepFunctionRole.name
-  policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/ElasticMapReduceAddJobFlowStepsManagementFullAccess-787682d9-dae7-4225-bd9b-2dede6b4fccd"
-}
-resource "aws_iam_role_policy_attachment" "EMR_Terminate_JobFlows_Management_FullAccess_Policy" {
-  role       = aws_iam_role.StepFunctionRole.name
-  policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/ElasticMapReduceTerminateJobFlowsManagementFullAccessPolicy-6352a2c4-0f33-4ac6-9cd7-0b1d345a541c"
-}
-resource "aws_iam_role_policy_attachment" "XRay_Access_Policy" {
-  role       = aws_iam_role.StepFunctionRole.name
-  policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/XRayAccessPolicy-feea7911-1622-45ee-aa83-d4bcf8b31242"
-}
+# resource "aws_iam_role_policy_attachment" "EMR_RunJob_Flow_Management_Scoped_Access_Policy" {
+#   role       = aws_iam_role.StepFunctionRole.name
+#   policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/ElasticMapReduceRunJobFlowManagementScopedAccessPolicy-e0978da6-15ff-49d1-9f21-da5bf57bc357"  
+# }
+# resource "aws_iam_role_policy_attachment" "EMR_Add_JobFlow_StepsManagement_FullAccess" {
+#   role       = aws_iam_role.StepFunctionRole.name
+#   policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/ElasticMapReduceAddJobFlowStepsManagementFullAccess-787682d9-dae7-4225-bd9b-2dede6b4fccd"
+# }
+# resource "aws_iam_role_policy_attachment" "EMR_Terminate_JobFlows_Management_FullAccess_Policy" {
+#   role       = aws_iam_role.StepFunctionRole.name
+#   policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/ElasticMapReduceTerminateJobFlowsManagementFullAccessPolicy-6352a2c4-0f33-4ac6-9cd7-0b1d345a541c"
+# }
+# resource "aws_iam_role_policy_attachment" "XRay_Access_Policy" {
+#   role       = aws_iam_role.StepFunctionRole.name
+#   policy_arn = "arn:aws:iam::${var.account_id}:policy/service-role/XRayAccessPolicy-feea7911-1622-45ee-aa83-d4bcf8b31242"
+# }
